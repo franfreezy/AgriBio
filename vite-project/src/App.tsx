@@ -1,12 +1,77 @@
-import { useState } from 'react'
-import { BrowserRouter as Router, Route, Routes, Link, NavLink } from 'react-router-dom'
+import { useState, useEffect } from 'react'
+import { BrowserRouter as Router, Route, Routes, NavLink } from 'react-router-dom'
 import './App.css'
 import About from './pages/About'
 import './pages/About.css'
 import AuthModal from './components/AuthModal'
+import Dashboard from './components/Dashboard'
+import Loading from './components/Loading'
 
 function App() {
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    // Create an array of image paths to preload
+    const imagesToLoad = ['/logo.jpg', '/imglogo.jpeg'];
+    let loadedImages = 0;
+
+    // Function to handle image load
+    const handleImageLoad = () => {
+      loadedImages++;
+      if (loadedImages === imagesToLoad.length) {
+        // All images are loaded, wait a bit more to ensure smooth transition
+        setTimeout(() => {
+          setIsLoading(false);
+        }, 1000);
+      }
+    };
+
+    // Preload images
+    imagesToLoad.forEach(src => {
+      const img = new Image();
+      img.src = src;
+      img.onload = handleImageLoad;
+      img.onerror = handleImageLoad; // Count errors as loaded to prevent infinite loading
+    });
+
+    // Cleanup function
+    return () => {
+      // Clean up image objects
+      imagesToLoad.forEach(src => {
+        const img = new Image();
+        img.src = src;
+        img.onload = null;
+        img.onerror = null;
+      });
+    };
+  }, []);
+
+  // Function to handle successful login
+  const handleLoginSuccess = () => {
+    setIsLoggedIn(true);
+    setIsModalOpen(false);
+  };
+
+  // Function to handle logout
+  const handleLogout = () => {
+    setIsLoggedIn(false);
+  };
+
+  // If loading, show loading indicator
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Loading />
+      </div>
+    );
+  }
+
+  // If user is logged in, show dashboard
+  if (isLoggedIn) {
+    return <Dashboard onLogout={handleLogout} />;
+  }
 
   return (
     <Router>
@@ -91,7 +156,11 @@ function App() {
           } />
         </Routes>
 
-        <AuthModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
+        <AuthModal 
+          isOpen={isModalOpen} 
+          onClose={() => setIsModalOpen(false)} 
+          onLoginSuccess={handleLoginSuccess}
+        />
 
         {/* Footer */}
         <footer className="bg-slate-50 text-slate-600 border-t border-slate-100 px-4 sm:px-6 py-4 relative overflow-hidden">
