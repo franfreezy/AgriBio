@@ -5,29 +5,32 @@ import { auth, googleProvider } from '../config/firebase';
 interface AuthModalProps {
   isOpen: boolean;
   onClose: () => void;
+  onLoginSuccess: () => void;
 }
 
-const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
+const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onLoginSuccess }) => {
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
 
   if (!isOpen) return null;
-
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     // Handle email/password authentication here
     console.log('Form submitted:', { email, password, isLogin });
+    
+    // For now, simulate successful login
+    // In a real app, you would authenticate with Firebase here
+    onLoginSuccess();
   };
-
   const handleGoogleSignIn = async () => {
     try {
       setError('');
       const result = await signInWithPopup(auth, googleProvider);
       console.log('Google sign in successful:', result.user);
-      onClose();
+      onLoginSuccess();
     } catch (err) {
       setError('Failed to sign in with Google. Please try again.');
       console.error('Google sign in error:', err);
