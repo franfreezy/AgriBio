@@ -6,6 +6,7 @@ import './pages/About.css'
 import AuthModal from './components/AuthModal'
 import Dashboard from './components/Dashboard'
 import Loading from './components/Loading'
+import DataUpload from './components/DataUpload'
 
 function App() {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -102,6 +103,7 @@ function App() {
                   Home
                 </NavLink>
               </li>
+
               <li>
                 <NavLink 
                   to="/about" 
