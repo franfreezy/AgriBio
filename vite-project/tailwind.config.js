@@ -12,6 +12,9 @@ export default {
           '50%': { opacity: '0.3' },
         },
       },
+      animation: {
+        'blink': 'blink 1s ease-in-out infinite',
+      },
     },
   },
   plugins: [],

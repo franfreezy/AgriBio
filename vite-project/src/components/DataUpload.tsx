@@ -3,20 +3,19 @@ import { uploadFile } from '../services/etlService';
 
 interface UploadedFile {
   name: string;
-  status: 'waiting' | 'processing' | 'cleaned' | 'error';
+  status: 'uploaded' | 'error';
   timestamp: Date;
   type: string;
   size: number;
   message?: string;
-  stats?: {
-    row_count: number;
-    column_count: number;
-    missing_values: { [key: string]: { count: number; percentage: number } };
-    duplicates_removed: number;
-  };
+  url?: string;
 }
 
-const DataUpload: React.FC = () => {
+interface DataUploadProps {
+  onFileUploaded?: () => void;
+}
+
+const DataUpload: React.FC<DataUploadProps> = ({ onFileUploaded }) => {
   const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
   const [processingStatus, setProcessingStatus] = useState({
     processed: 0,
@@ -25,7 +24,6 @@ const DataUpload: React.FC = () => {
   });
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Get file type from file extension
   const getFileType = (fileName: string): string => {
     const extension = fileName.split('.').pop()?.toLowerCase() || '';
     switch (extension) {
@@ -38,6 +36,7 @@ const DataUpload: React.FC = () => {
         return 'Other';
     }
   };
+
   const processFile = async (file: File) => {
     try {
       return await uploadFile(file);
@@ -52,62 +51,42 @@ const DataUpload: React.FC = () => {
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
-    if (files) {
-      const newFiles: UploadedFile[] = Array.from(files).map(file => ({
+    if (files) {      const newFiles: UploadedFile[] = Array.from(files).map(file => ({
         name: file.name,
-        status: 'waiting',
+        status: 'uploading',
         timestamp: new Date(),
         type: getFileType(file.name),
         size: file.size
       }));
 
-      setUploadedFiles(prev => [...prev, ...newFiles]);
-
-      // Update processing status
-      setProcessingStatus(prev => ({
-        ...prev,
-        waiting: prev.waiting + newFiles.length,
-        total: prev.total + newFiles.length
-      }));
-
-      // Process each file
+      setUploadedFiles(prev => [...prev, ...newFiles]);      // Upload each file
       for (let i = 0; i < files.length; i++) {
         const file = files[i];
-        
-        // Update status to processing
-        setUploadedFiles(prev =>
-          prev.map(f => {
-            if (f.name === file.name) {
-              return { ...f, status: 'processing' };
-            }
-            return f;
-          })
-        );
-
-        // Process the file
         const result = await processFile(file);
 
-        // Update file status with ETL results
         setUploadedFiles(prev =>
           prev.map(f => {
             if (f.name === file.name) {
-              return { 
-                ...f, 
-                status: result.status as UploadedFile['status'],
+              return {
+                ...f,
+                status: result.status,
                 message: result.message,
-                stats: result.stats
+                url: result.url
               };
             }
             return f;
           })
         );
+      }
 
-        // Update processing status
-        setProcessingStatus(prev => ({
-          ...prev,
-          processed: prev.processed + 1,
-          waiting: prev.waiting - 1
-        }));
+      // Call onFileUploaded after all files are processed
+      if (onFileUploaded) {
+        onFileUploaded();
+      }
+
+      // Clear the file input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
       }
     }
   };
@@ -115,14 +94,9 @@ const DataUpload: React.FC = () => {
   const handleUploadClick = () => {
     fileInputRef.current?.click();
   };
-
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'waiting':
-        return 'bg-yellow-100 text-yellow-800';
-      case 'processing':
-        return 'bg-blue-100 text-blue-800 animate-pulse';
-      case 'cleaned':
+      case 'uploaded':
         return 'bg-green-100 text-green-800';
       case 'error':
         return 'bg-red-100 text-red-800';
@@ -133,11 +107,7 @@ const DataUpload: React.FC = () => {
 
   const getStatusIcon = (status: string) => {
     switch (status) {
-      case 'waiting':
-        return '⏳';
-      case 'processing':
-        return '⚙️';
-      case 'cleaned':
+      case 'uploaded':
         return '✅';
       case 'error':
         return '❌';

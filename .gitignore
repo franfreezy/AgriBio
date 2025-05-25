@@ -1,0 +1,10 @@
+Backend/.env
+Backend/Backendapi/__pycache__/
+Backend/.env
+Backend/Backendapi/migrations/__pycache__/
+Backend/db.sqlite3
+Backend/Backendapi/migrations/
+Backend/Backend/__pycache__/
+
+.env
+Backend/staticfiles/
